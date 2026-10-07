@@ -1,0 +1,38 @@
+name: backend_go
+
+services:
+  backend_db:
+    container_name: backend_db
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: main
+      POSTGRES_USER: main
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - backend_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U main -d main"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend_go:
+    container_name: backend_go
+    build:
+      context: ../..
+      dockerfile: ./deploy/dev/Dev.Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - POSTGRES_HOST=backend_db
+      - POSTGRES_USER=main
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=main
+    depends_on:
+      backend_db:
+        condition: service_healthy
+
+volumes:
+  backend_db:
